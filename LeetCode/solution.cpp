@@ -1,6 +1,7 @@
 //
 // Created by YU on 2022/10/6.
 //
+#include <unordered_set>
 #include "string"
 #include "iostream"
 #include "vector"
@@ -9,6 +10,8 @@
 #include "stack"
 #include "cstring"
 #include "algorithm"
+#include "queue"
+#include "set"
 
 using namespace std;
 
@@ -33,6 +36,21 @@ struct TreeNode {
     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
 
     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+};
+
+class Node {
+public:
+    int val;
+    Node *left;
+    Node *right;
+    Node *next;
+
+    Node() : val(0), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val) : val(_val), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val, Node *_left, Node *_right, Node *_next)
+            : val(_val), left(_left), right(_right), next(_next) {}
 };
 
 //65
@@ -758,8 +776,10 @@ private:
     vector<string> res;
 
     void rec(const string &s, string cur, int start, int dots) {
-        if (dots == 3 && validIP(s.substr(start))) {
-            res.push_back(cur + s.substr(start));
+        if (dots == 3) {
+            if (validIP(s.substr(start))) {
+                res.push_back(cur + s.substr(start));
+            }
             return;
         }
 
@@ -839,10 +859,12 @@ public:
 
         for (int i = 1; i <= s1.length(); i++) {
             for (int j = 1; j <= s2.length(); j++) {
-                if (s1[i - 1] == s3[i + j - 1]) {
-                    dp[i][j] = (dp[i][j] || dp[i - 1][j]);
+                if (s1[i - 1] == s3[i + j - 1] && s2[j - 1] == s3[i + j - 1]) {
+                    dp[i][j] = (dp[i - 1][j] || dp[i][j - 1]);
+                } else if (s1[i - 1] == s3[i + j - 1]) {
+                    dp[i][j] = dp[i - 1][j];
                 } else if (s2[j - 1] == s3[i + j - 1]) {
-                    dp[i][j] = (dp[i][j] || dp[i][j - 1]);
+                    dp[i][j] = dp[i][j - 1];
                 } else {
                     dp[i][j] = false;
                 }
@@ -853,7 +875,888 @@ public:
     }
 };
 
+//99
+class RecoverBinarySearchTree {
+public:
+    void recoverTree(TreeNode *root) {
+        inorder(root);
+        swap(r1->val, r2->val);
+    }
+
+private:
+    TreeNode *r1 = nullptr, *r2 = nullptr, *pre = new TreeNode(INT_MIN);
+
+    void inorder(TreeNode *root) {
+        if (root == nullptr) {
+            return;
+        }
+
+        inorder(root->left);
+        if (r1 == nullptr && root->val < pre->val) {
+            r1 = pre;
+        }
+        if (r1 != nullptr && root->val < pre->val) {
+            r2 = root;
+        }
+        pre = root;
+        inorder(root->right);
+    }
+};
+
+//103
+class BinaryTreeZigzagLevelOrderTraversal {
+public:
+    vector<vector<int>> zigzagLevelOrder(TreeNode *root) {
+        if (root == nullptr) {
+            return {};
+        }
+
+        bool right = true;
+        vector<vector<int>> res;
+        queue<TreeNode *> layer;
+        layer.push(root);
+        while (!layer.empty()) {
+            int size = layer.size();
+            vector<int> temp(size, 0);
+            for (int i = 0; i < size; i++) {
+                auto f = layer.front();
+                layer.pop();
+                if (f->left != nullptr) {
+                    layer.push(f->left);
+                }
+                if (f->right != nullptr) {
+                    layer.push(f->right);
+                }
+                if (right) {
+                    temp[i] = f->val;
+                } else {
+                    temp[size - i - 1] = f->val;
+                }
+            }
+            res.push_back(temp);
+            right = !right;
+        }
+
+        return res;
+    }
+};
+
+//105
+class ConstructBinaryTreefromPreorderandInorderTraversal {
+public:
+    TreeNode *buildTree(vector<int> &preorder, vector<int> &inorder) {
+        return creatTree(preorder, inorder, 0, inorder.size() - 1);
+    }
+
+private:
+    int preIdx = 0;
+
+    TreeNode *creatTree(vector<int> &preorder, vector<int> &inorder, int start, int end) {
+        if (start > end) {
+            return nullptr;
+        }
+
+        auto node = new TreeNode(preorder[preIdx++]);
+        int pos = 0;
+        for (int i = start; i <= end; i++) {
+            if (inorder[i] == node->val) {
+                pos = i;
+                break;
+            }
+        }
+
+        node->left = creatTree(preorder, inorder, start, pos - 1);
+        node->right = creatTree(preorder, inorder, pos + 1, end);
+        return node;
+    }
+};
+
+//106
+class ConstructBinaryTreefromInorderandPostorderTraversal {
+public:
+    TreeNode *buildTree(vector<int> &inorder, vector<int> &postorder) {
+        postIdx = postorder.size() - 1;
+        return creatTree(inorder, postorder, 0, inorder.size() - 1);
+    }
+
+private:
+    int postIdx = 0;
+
+    TreeNode *creatTree(vector<int> &inorder, vector<int> &postorder, int start, int end) {
+        if (start > end) {
+            return nullptr;
+        }
+
+        auto node = new TreeNode(postorder[postIdx--]);
+        int pos = 0;
+        for (int i = start; i <= end; i++) {
+            if (inorder[i] == node->val) {
+                pos = i;
+                break;
+            }
+        }
+
+        node->right = creatTree(inorder, postorder, pos + 1, end);
+        node->left = creatTree(inorder, postorder, start, pos - 1);
+        return node;
+    }
+};
+
+//334
+class IncreasingTripletSubsequence {
+    bool increasingTriplet(vector<int> &nums) {
+        if (nums.size() < 3)
+            return false;
+        int left = INT_MAX, mid = INT_MAX;
+        for (auto n: nums) {
+            if (n > mid) {
+                return true;
+            }
+            if (n < mid && n > left) {
+                mid = n;
+            }
+            if (n < left) {
+                left = n;
+            }
+        }
+        return false;
+    }
+};
+
+//109
+class ConvertSortedListtoBinarySearchTree {
+public:
+    TreeNode *sortedListToBST(ListNode *head) {
+        if (head == nullptr) {
+            return nullptr;
+        }
+
+        auto p = findMid(head);
+        auto root = new TreeNode(p.second->val);
+
+        if (p.first != nullptr) {
+            p.first->next = nullptr;
+            root->left = sortedListToBST(head);
+        }
+
+        root->right = sortedListToBST(p.second->next);
+        return root;
+    }
+
+private:
+    pair<ListNode *, ListNode *> findMid(ListNode *head) {
+        if (head == nullptr, head->next == nullptr) {
+            return {nullptr, head};
+        }
+
+        ListNode *slow = head;
+        ListNode *fast = head->next;
+        ListNode *pre = nullptr;
+
+        while (fast != nullptr && fast->next != nullptr) {
+            fast = fast->next->next;
+            pre = slow;
+            slow = slow->next;
+        }
+
+        return {pre, slow};
+    }
+};
+
+//113
+class PathSumII {
+public:
+    vector<vector<int>> pathSum(TreeNode *root, int targetSum) {
+        vector<int> path;
+        dfs(root, path, 0, targetSum);
+        return res;
+    }
+
+private:
+    void dfs(TreeNode *root, vector<int> &path, int current, const int &target) {
+        if (root == nullptr) {
+            return;
+        }
+
+        current += root->val;
+        path.push_back(root->val);
+        if (target == current && root->left == nullptr && root->right == nullptr) {
+            res.push_back(path);
+            path.pop_back();
+            return;
+        }
+
+        dfs(root->left, path, current, target);
+        dfs(root->right, path, current, target);
+        path.pop_back();
+    }
+
+    vector<vector<int>> res;
+};
+
+//114
+class FlattenBinaryTreetoLinkedList {
+public:
+    void flatten(TreeNode *root) {
+        TreeNode *cur = root;
+        while (cur != nullptr) {
+            if (cur->left != nullptr) {
+                TreeNode *runner = cur->left;
+                while (runner->right != nullptr) {
+                    runner = runner->right;
+                }
+                runner->right = cur->right;
+                cur->right = cur->left;
+                cur->left = nullptr;
+            }
+            cur = cur->right;
+        }
+    }
+};
+
+//115
+class DistinctSubsequences {
+public:
+    int numDistinct(string s, string t) {
+        vector<unsigned int> dp(t.length() + 1, 0);
+        dp[0] = 1;
+        for (int i = 0; i < s.length(); i++) {
+            for (int j = t.length(); j > 0; j--) {
+                if (s[i] == t[j - 1]) {
+                    dp[j] = dp[j] + dp[j - 1];
+                }
+            }
+        }
+        return dp[t.length()];
+    }
+};
+
+//116
+class PopulatingNextRightPointersinEachNode {
+public:
+    Node *connect(Node *root) {
+        if (root == nullptr) {
+            return nullptr;
+        }
+
+        if (root->left != nullptr) {
+            root->left->next = root->right;
+        }
+        if (root->right != nullptr && root->next != nullptr) {
+            root->right->next = root->next->left;
+        }
+        connect(root->left);
+        connect(root->right);
+        return root;
+    }
+};
+
+//117
+class PopulatingNextRightPointersinEachNodeII {
+public:
+    Node *connect(Node *root) {
+        if (root == nullptr) {
+            return nullptr;
+        }
+
+        queue<Node *> q;
+        q.push(root);
+
+        while (!q.empty()) {
+            int n = q.size();
+            for (int i = 0; i < n; i++) {
+                auto node = q.front();
+                q.pop();
+                if (i == n - 1) {
+                    node->next = nullptr;
+                } else {
+                    node->next = q.front();
+                }
+
+                if (node->left != nullptr) {
+                    q.push(node->left);
+                }
+                if (node->right != nullptr) {
+                    q.push(node->right);
+                }
+            }
+        }
+
+        return root;
+    }
+};
+
+//122
+class BestTimetoBuyandSellStockII {
+    int maxProfit(vector<int> &prices) {
+        int balance = 0, hold = INT_MIN;
+        for (auto p: prices) {
+            balance = max(balance, hold + p);
+            hold = max(hold, balance - p);
+        }
+        return balance;
+    }
+
+    int maxProfit2(vector<int> &prices) {
+        int profit = 0;
+        for (int i = 0; i < prices.size() - 1; i++) {
+            if (prices[i] < prices[i + 1]) {
+                profit += (prices[i + 1] - prices[i]);
+            }
+        }
+        return profit;
+    }
+};
+
+//123
+class BestTimetoBuyandSellStockIII {
+    int maxProfit(vector<int> &prices) {
+        if (prices.size() <= 1)
+            return 0;
+        vector<int> left(prices.size(), 0);
+        vector<int> right(prices.size(), 0);
+        int n = prices.size();
+        int leftMin = prices[0], rightMax = prices[n - 1];
+        for (int i = 1; i < n; i++) {
+            leftMin = min(prices[i], leftMin);
+            left[i] = max(left[i - 1], prices[i] - leftMin);
+            rightMax = max(prices[n - i - 1], rightMax);
+            right[n - i - 1] = max(right[n - i], rightMax - prices[n - i - 1]);
+        }
+        int profit = INT_MIN;
+        for (int i = 0; i < n; i++) {
+            profit = max(profit, left[i] + right[i]);
+        }
+        return profit;
+    }
+
+    int maxProfit2(vector<int> &prices) {
+        int buy1 = INT_MAX, profit1 = INT_MIN;
+        int buy2 = INT_MAX, profit2 = INT_MIN;
+        for (auto p: prices) {
+            buy1 = min(buy1, p);
+            profit1 = max(profit1, p - buy1);
+            buy2 = min(buy2, p - profit1);
+            profit2 = max(profit2, p - buy2);
+        }
+        return profit2;
+    }
+};
+
+//124
+class BinaryTreeMaximumPathSum {
+public:
+    int maxPathSum(TreeNode *root) {
+        maxGain(root);
+        return maxSum;
+    }
+
+private:
+    int maxGain(TreeNode *root) {
+        if (root == nullptr) {
+            return 0;
+        }
+        int left = max(maxGain(root->left), 0);
+        int right = max(maxGain(root->right), 0);
+        maxSum = max(maxSum, left + right + root->val);
+        return root->val + max(left, right);
+    }
+
+    int maxSum = INT_MIN;
+};
+
+//127
+class WordLadder {
+public:
+    int ladderLength(string beginWord, string endWord, vector<string> &wordList) {
+        if (std::find(wordList.begin(), wordList.end(), endWord) == wordList.end()) {
+            return 0;
+        }
+        queue<string> q;
+        q.push(endWord);
+        wordList.erase(std::find(wordList.begin(), wordList.end(), endWord));
+        wordList.push_back(beginWord);
+        int len = 0;
+
+        while (!q.empty()) {
+            len++;
+            int n = q.size();
+            for (int i = 0; i < n; i++) {
+                string cur = q.front();
+                q.pop();
+                auto it = wordList.begin();
+                while (it != wordList.end()) {
+                    if (differOne(*it, cur)) {
+                        if (*it == beginWord) {
+                            return len + 1;
+                        }
+                        q.push(*it);
+                        it = wordList.erase(it);
+                    } else {
+                        it++;
+                    }
+                }
+            }
+        }
+
+        return 0;
+    }
+
+private:
+    bool differOne(const string &s1, const string &s2) {
+        int dif = 0;
+        for (int i = 0; i < s1.length(); i++) {
+            if (dif >= 2) {
+                return false;
+            }
+            if (s1[i] != s2[i]) {
+                dif++;
+            }
+        }
+
+        return dif == 1;
+    }
+};
+
+//126
+class WordLadderII {
+public:
+    vector<vector<string>> findLadders(string beginWord, string endWord, vector<string> &wordList) {
+        if (std::find(wordList.begin(), wordList.end(), endWord) == wordList.end()) {
+            return {};
+        }
+        vector<vector<string>> nodes;
+        queue<string> forward;
+        forward.push(beginWord);
+        bool end = false;
+        while (!forward.empty()) {
+            int n = forward.size();
+            vector<string> temp;
+            for (int i = 0; i < n; i++) {
+                string top = forward.front();
+                forward.pop();
+                auto it = wordList.begin();
+                while (it != wordList.end()) {
+                    if (differOne(*it, top)) {
+                        if (*it == endWord) {
+                            end = true;
+                            break;
+                        }
+                        temp.push_back(*it);
+                        forward.push(*it);
+                        it = wordList.erase(it);
+                    } else {
+                        it++;
+                    }
+                }
+                if (end) {
+                    break;
+                }
+            }
+            if (end) {
+                break;
+            }
+            nodes.push_back(temp);
+        }
+
+        if (!end) {
+            return {};
+        }
+        if (nodes.empty()) {
+            return {{beginWord, endWord}};
+        }
+        deque<string> path = {endWord};
+        DFS(nodes, 1, path, beginWord);
+        return res;
+    }
+
+private:
+    vector<vector<string>> res;
+
+    void DFS(vector<vector<string>> &nodes, int level, deque<string> &path, const string &beginWord) {
+        int n = nodes.size();
+        if (level == n + 1) {
+            if (differOne(beginWord, path.front())) {
+                path.push_front(beginWord);
+                res.emplace_back(path.begin(), path.end());
+                path.pop_front();
+            }
+        } else {
+            for (const auto &w: nodes[n - level]) {
+                if (differOne(w, path.front())) {
+                    path.push_front(w);
+                    DFS(nodes, level + 1, path, beginWord);
+                    path.pop_front();
+                }
+            }
+        }
+    }
+
+    bool differOne(const string &s1, const string &s2) {
+        int dif = 0;
+        for (int i = 0; i < s1.length(); i++) {
+            if (dif >= 2) {
+                return false;
+            }
+            if (s1[i] != s2[i]) {
+                dif++;
+            }
+        }
+
+        return dif == 1;
+    }
+};
+
+//129
+class SumRoottoLeafNumbers {
+public:
+    int sumNumbers(TreeNode *root) {
+        passN(root, 0);
+        return sumN;
+    }
+
+private:
+    int sumN;
+
+    void passN(TreeNode *root, int n) {
+        if (root->left == nullptr && root->right == nullptr) {
+            sumN += (root->val + n * 10);
+        } else {
+            if (root->left != nullptr) {
+                passN(root->left, root->val + n * 10);
+            }
+            if (root->right != nullptr) {
+                passN(root->right, root->val + n * 10);
+            }
+        }
+    }
+};
+
+//131
+class PalindromePartitioning {
+public:
+    vector<vector<string>> partition(string s) {
+        vector<string> path;
+        rec(s, path, 0);
+        return res;
+    }
+
+private:
+    vector<vector<string>> res;
+
+    void rec(const string &s, vector<string> &path, int start) {
+        if (start == s.length()) {
+            res.push_back(path);
+            return;
+        }
+
+        for (int i = start; i < s.length(); i++) {
+            if (ispalindrome(s, start, i)) {
+                path.push_back(s.substr(start, i - start + 1));
+                rec(s, path, i + 1);
+                path.pop_back();
+            }
+        }
+    }
+
+    bool ispalindrome(const string &s, int start, int end) {
+        while (start < end) {
+            if (s[start] != s[end]) {
+                return false;
+            }
+            start++;
+            end--;
+        }
+        return true;
+    }
+};
+
+//132
+class PalindromePartitioningII {
+public:
+    int minCut(string s) {
+        vector<int> dp(s.length(), -1);
+        return partCut(s, 0, dp);
+    }
+
+private:
+    int partCut(const string &s, int start, vector<int> &dp) {
+        if (start >= s.length() - 1 || ispalindrome(s, start, s.length() - 1)) {
+            return 0;
+        }
+        if (dp[start] != -1) {
+            return dp[start];
+        }
+
+        int res = INT_MAX;
+        for (int i = start; i < s.length(); i++) {
+            if (ispalindrome(s, start, i)) {
+                res = min(res, partCut(s, i + 1, dp) + 1);
+            }
+        }
+
+        return dp[start] = res;
+    }
+
+    bool ispalindrome(const string &s, int start, int end) {
+        while (start < end) {
+            if (s[start] != s[end]) {
+                return false;
+            }
+            start++;
+            end--;
+        }
+        return true;
+    }
+};
+
+//133
+class CloneGraph {
+public:
+    class Node {
+    public:
+        int val;
+        vector<Node *> neighbors;
+
+        Node() {
+            val = 0;
+            neighbors = vector<Node *>();
+        }
+
+        Node(int _val) {
+            val = _val;
+            neighbors = vector<Node *>();
+        }
+
+        Node(int _val, vector<Node *> _neighbors) {
+            val = _val;
+            neighbors = _neighbors;
+        }
+    };
+
+    Node *cloneGraph(Node *node) {
+        if (node == nullptr) {
+            return nullptr;
+        }
+        if (node->neighbors.size() == 0) {
+            return new Node(node->val);
+        }
+        return DFS(node);
+    }
+
+private:
+    unordered_map<Node *, Node *> mp;
+
+    Node *DFS(Node *root) {
+        vector<Node *> neighbour;
+        Node *clone = new Node(root->val);
+        mp[root] = clone;
+        for (auto n: root->neighbors) {
+            if (mp.find(n) != mp.end()) {
+                neighbour.push_back(mp[n]);
+            } else {
+                neighbour.push_back(DFS(n));
+            }
+        }
+        clone->neighbors = neighbour;
+        return clone;
+    }
+};
+
+//237
+class DeleteNodeinaLinkedList {
+public:
+    void deleteNode(ListNode *node) {
+        ListNode *n = node->next;
+        *node = *n;
+        delete n;
+    }
+};
+
+//134
+class GasStation {
+public:
+    int canCompleteCircuit(vector<int> &gas, vector<int> &cost) {
+        int diff = 0, cur = 0, total = 0, start = 0;
+        for (int i = 0; i < gas.size(); i++) {
+            diff = gas[i] - cost[i];
+            cur += diff;
+            total += diff;
+            if (cur < 0) {
+                start = i + 1;
+                cur = 0;
+            }
+        }
+        if (total < 0) {
+            return -1;
+        }
+        return start;
+    }
+};
+
+//135
+class Candy {
+public:
+    int candy(vector<int> &ratings) {
+        int n = ratings.size();
+        vector<int> up(n, 1), down(n, 1);
+        for (int i = 1; i < n; i++) {
+            if (ratings[i] > ratings[i - 1]) {
+                up[i] = up[i - 1] + 1;
+            }
+            if (ratings[n - i - 1] > ratings[n - i]) {
+                down[n - i - 1] = down[n - i] + 1;
+            }
+        }
+
+        int total = 0;
+        for (int i = 0; i < n; i++) {
+            total += max(up[i], down[i]);
+        }
+
+        return total;
+    }
+};
+
+//137
+class SignleNumberII {
+public:
+    int singleNumber(vector<int> &nums) {
+        int single = 0;
+        for (int i = 0; i < 32; i++) {
+            int sum = 0;
+            for (auto n: nums) {
+                if (n & (1 << i)) {
+                    sum++;
+                }
+            }
+            if (sum % 3 == 1) {
+                single = (single | (1 << i));
+            }
+        }
+        return single;
+    }
+};
+
+//139
+class WordBreak {
+public:
+    bool wordBreak(string s, vector<string> &wordDict) {
+        vector<bool> dp(s.length(), false);
+        for (int i = 0; i < s.length(); i++) {
+            if (i > 0 && !dp[i - 1]) {
+                continue;
+            }
+
+            string temp;
+            for (int j = i; j < s.length(); j++) {
+                temp += s[j];
+                if (find(wordDict.begin(), wordDict.end(), temp) != wordDict.end()) {
+                    dp[j] = true;
+                }
+            }
+        }
+
+        return dp.back();
+    }
+};
+
+//1531
+class StringCompressionII {
+public:
+    int getLengthOfOptimalCompression(string s, int k) {
+        memset(dp, -1, sizeof(dp));
+        return DFS(s, 0, k);
+    }
+
+private:
+    int dp[101][101];
+
+    int DFS(string &s, int left, int k) {
+        int n = k;
+        if (s.size() <= left + n) {
+            return 0;
+        }
+        if (dp[left][n] >= 0) {
+            return dp[left][n];
+        }
+        int res = n ? DFS(s, left + 1, n - 1) : INT_MAX / 2;
+        int count = 1;
+        for (int i = left + 1; i <= s.size(); i++) {
+            res = min(res, DFS(s, i, n) + 1 + (count >= 100 ? 3 : (count >= 10 ? 2 : (count > 1 ? 1 : 0))));
+            if (i == s.size()) {
+                break;
+            }
+            if (s[i] == s[left]) {
+                count++;
+            } else if (--n < 0) {
+                break;
+            }
+        }
+        return dp[left][k] = res;
+    }
+};
+
+//140
+class WordBreakII {
+public:
+    vector<string> wordBreak(string s, vector<string> &wordDict) {
+        int n = s.size();
+        unordered_set<string> wd(wordDict.begin(), wordDict.end());
+        vector<vector<string>> dp(n);
+
+        for (int i = 0; i < n; i++) {
+            for (int j = i; j >= 0; j--) {
+                string temp = s.substr(j, i - j + 1);
+                if (wd.find(temp) != wd.end()) {
+                    if (j == 0) {
+                        dp[i].push_back(temp);
+                    } else {
+                        for (const auto &item: dp[j - 1]) {
+                            dp[i].push_back(item + " " + temp);
+                        }
+                    }
+                }
+            }
+        }
+
+        return dp[n - 1];
+    }
+};
+
+//142
+class LinkedListCycleII {
+public:
+    ListNode *detectCycle(ListNode *head) {
+        if (head == nullptr || head->next == nullptr) {
+            return nullptr;
+        }
+        auto slow = head, fast = head;
+        bool found = false;
+        while (fast != nullptr && fast->next != nullptr) {
+            slow = slow->next;
+            fast = fast->next->next;
+            if (fast == slow) {
+                found = true;
+                break;
+            }
+        }
+        if (found != true) {
+            return nullptr;
+        }
+
+        auto temp = head;
+        while (temp != slow) {
+            temp = temp->next;
+            slow = slow->next;
+        }
+
+        return temp;
+    }
+};
+
 int main() {
-    auto solution = new InterleavingString;
-    cout << solution->isInterleave("ab", "bc", "bbac");
+    auto solution = new StringCompressionII;
+    string s = "aaabcccd";
+    solution->getLengthOfOptimalCompression(s, 2);
 }
